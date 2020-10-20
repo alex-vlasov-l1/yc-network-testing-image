@@ -1,0 +1,47 @@
+#cloud-config
+datasource:
+  Ec2:
+    strict_id: false
+write_files:
+- content: |
+        network:
+          version: 2
+          ethernets:
+            eth0:
+              dhcp4: true
+              dhcp4-overrides:
+                use-mtu: false
+              mtu: 8910
+  path: /etc/netplan/eth.yaml
+  permissions: '0755'
+- path: /etc/sysctl.d/88-disable.conf
+  content: |
+    net.core.rmem_max=26214400
+    net.core.rmem_default=6250000
+    net.core.wmem_max=26214400
+    net.core.wmem_default=6250000
+    net.ipv4.tcp_rmem=4096 6250000 26214400
+    net.ipv4.tcp_wmem=4096 6250000 26214400
+  owner: root
+runcmd:
+  - netplan generate /etc/netplan/eth.yaml
+  - netplan apply
+  - sysctl -w net.core.rmem_max=26214400
+  - sysctl -w net.core.rmem_default=6250000
+  - sysctl -w net.core.wmem_max=26214400
+  - sysctl -w net.core.wmem_default=6250000
+  - sysctl -w net.ipv4.tcp_rmem='4096 6250000 26214400'
+  - sysctl -w net.ipv4.tcp_wmem='4096 6250000 26214400'
+  - service procps restart
+users:
+  - default
+  - name: ubuntu
+    groups: sudo
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh-authorized-keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCgD7NfUMxMku2kW4LF0G48DGjjSVq1Y5dmZ+r/Q08PiCw9v7ewxjpoYAZ8B2MXALjmXfJ1lvaHI5bX+QRnqlkstdQ3cfMzMnukAoU3IpicXbcvoS0620d7kDX7NO4gVsZC4eCewSmOVu95hp3VaSx0FEyfpIMeW6NWz0/XZIx9qO5pcz/MlwhCoCmjMCqoB79kJX4C9xWUByo6237OQ+hj0malJ474enNWi/mj4LY+hw3/n78w3Pb2bDBnntKN8uNG4RvdL6A1k0X8Rq6tY1squmt3we/TP0TCrd+Br2gsUMZeIIZIX2FqB+YcQ4VpM32c0XbkoWEb/6LS50Y3IQsT alex-vlasov@alex-vlasov-osx
+packages:
+ - netplan.io
+ - iperf3
+ - hping3
